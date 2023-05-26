@@ -19,18 +19,15 @@ module.exports = {
             },
             {
                 test: /\.css$/,
-                use: ["style-loader", "css-loader"]
+                use: ['style-loader', 'css-loader'],
             },
             {
-                test: /\.(png|jpg)$/,
-                use: [
-                    {
-                        loader: 'file-loader',
-                        options: {
-                            filename: '[name].[ext]'
-                        }
-                    }
-                ]
+                test: /\.(png|jpg|tif|tiff)$/,
+                type: 'asset/resource',
+            },
+            {
+                test: /\.geojson$/,
+                type: 'json',
             },
         ],
     },

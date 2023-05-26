@@ -15,14 +15,14 @@ import { Control, DomUtil } from 'leaflet';
 type LeafletButtonType = {
     onClick: (this: HTMLElement, ev: MouseEvent) => any;
 };
-const LeafletButton = ({ onClick }: LeafletButtonType) => {
+const LeafletButton = ({ onClick }: LeafletButtonType): null => {
     const map = useMap();
     useEffect(() => {
         const button = Control.extend({
             onAdd: () => {
                 const div = DomUtil.create('div');
                 // const div = document.createElement('div');
-                div.innerHTML = 'button';
+                div.innerHTML = 'Select Image';
                 div.className = 'buttonLayer';
                 div.addEventListener('click', onClick);
                 return div;
