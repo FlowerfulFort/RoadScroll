@@ -13,16 +13,21 @@ import { Control, DomUtil } from 'leaflet';
 //     }
 // `;
 type LeafletButtonType = {
+    title: string;
+    style?: object | null;
     onClick: (this: HTMLElement, ev: MouseEvent) => any;
 };
-const LeafletButton = ({ onClick }: LeafletButtonType): null => {
+const LeafletButton = ({ title, style, onClick }: LeafletButtonType): null => {
     const map = useMap();
     useEffect(() => {
         const button = Control.extend({
             onAdd: () => {
                 const div = DomUtil.create('div');
                 // const div = document.createElement('div');
-                div.innerHTML = 'Select Image';
+                div.innerHTML = title;
+                if (style != null) {
+                    Object.assign(div.style, style);
+                }
                 div.className = 'buttonLayer';
                 div.addEventListener('click', onClick);
                 return div;
@@ -34,5 +39,7 @@ const LeafletButton = ({ onClick }: LeafletButtonType): null => {
 
     return null;
 };
-
+LeafletButton.defaultProps = {
+    style: null,
+};
 export default LeafletButton;

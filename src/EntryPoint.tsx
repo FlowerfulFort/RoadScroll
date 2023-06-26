@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import L, { LatLngExpression } from 'leaflet';
 import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
 import PopupLayer from './PopupLayer';
@@ -10,10 +10,10 @@ import LeafletButton from './LeafletButton';
 import './map.css';
 import ImageList from './ImageList';
 import GeoImageLayer from './GeoImageLayer';
-type SatelliteImage = {
-    name: string;
-    path: string;
-};
+// type SatelliteImage = {
+//     name: string;
+//     path: string;
+// };
 const pos: LatLngExpression = [51.505, -0.09];
 const icon = L.icon({
     iconRetinaUrl: icRetina,
@@ -22,10 +22,63 @@ const icon = L.icon({
     iconSize: [24, 41],
     iconAnchor: [12, 41],
 });
+type ImageFile = ArrayBuffer | string | null;
 const EntryPoint = (): JSX.Element => {
-    const [flag, setFlag] = useState<boolean>(false);
-    const [imageList, setImageList] = useState<SatelliteImage[]>([]);
+    /********** State **********
+     * flag: Select Image 버튼 플래그
+     * // userImage: 선택한 이미지 파일의 이름, 사실상 사용하는 데가 없어서 폐기예정.
+     * imageBuffer: 선택한 이미지를 저장할 버퍼.
+     * roadData: geojson으로 저장되어 있는 도로 데이터
+     * // imageList: DB에서 불러올 이미지 리스트.
+     * // filetext: 파일 선택 예시 함수에서 사용함. 폐기할듯.
+     ***************************/
 
+    const [flag, setFlag] = useState<boolean>(false);
+    const [userImage, setUserImage] = useState<string>('');
+    const [imageBuffer, setImageBuffer] = useState<ArrayBuffer | null>(null);
+    const [roadData, setRoadData] = useState<string | null>(null);
+    const [imageList, setImageList] = useState<File[]>([]);
+    const [filetext, setFileText] = useState<string | null | ArrayBuffer>(null);
+    // let imageBuffer: ArrayBuffer | null = null;
+    // let roadData: string | null = null;
+
+    /* 데모용 이미지 선택 함수 */
+    const imageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const fileReader = new FileReader();
+        if (e.target.files == null) return;
+        fileReader.onload = () => {
+            setImageBuffer(fileReader.result as ArrayBuffer);
+            setUserImage(e.target.files![0].name);
+        };
+        fileReader.readAsArrayBuffer(e.target.files[0]);
+    };
+    /* 데모용 도로 선택 함수 */
+    const roadSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const fileReader = new FileReader();
+        if (e.target.files == null) return;
+        fileReader.onload = () => {
+            setRoadData(fileReader.result as string);
+            setUserImage(userImage + e.target.files![0].name);
+        };
+        fileReader.readAsText(e.target.files[0]);
+    };
+    /* 파일 선택 예시 */
+    const fileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const fileReader = new FileReader();
+        fileReader.onload = () => {
+            console.log(fileReader.result);
+            setFileText(fileReader.result);
+        };
+
+        if (e.target.files != null) {
+            fileReader.readAsText(e.target.files[0]);
+        }
+        // setImageList(Array.from(e.target.files || []));
+    };
+    // for debugging
+    useEffect(() => {
+        console.log(imageList);
+    }, [imageList]);
     return (
         <>
             <MapContainer
@@ -45,13 +98,26 @@ const EntryPoint = (): JSX.Element => {
                         A pretty CSS3 popup. <br /> Easily customizable.
                     </Popup>
                 </Marker>
-                <GeoImageLayer />
-                <LeafletButton onClick={() => setFlag(true)} />
+                {imageBuffer != null && (
+                    <GeoImageLayer tifBuffer={imageBuffer} jsonString={null} />
+                )}
+                {roadData != null && (
+                    <GeoImageLayer tifBuffer={null} jsonString={roadData} />
+                )}
+                {/* {userImage && (
+                    <GeoImageLayer tifBuffer={imageBuffer} jsonString={roadData} />
+                )} */}
+                <LeafletButton title="Select Image" onClick={() => setFlag(true)} />
             </MapContainer>
             {flag && (
                 <PopupLayer>
                     <ImageList title="Select/Upload Image" callback={setFlag}>
-                        {'['.concat([pos].toString(), ']')}
+                        <div>{'['.concat([pos].toString(), ']')}</div>
+                        <div>{filetext?.toString()}</div>
+                        <div>
+                            <input type="file" id="uploadImage" onChange={imageSelect} />
+                            <input type="file" id="uploadRoad" onChange={roadSelect} />
+                        </div>
                     </ImageList>
                 </PopupLayer>
             )}
