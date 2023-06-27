@@ -3,5 +3,13 @@
     "useTabs": false,
     "semi": true,
     "singleQuote": true,
-    "printWidth": 90
+    "printWidth": 90,
+    "overrides": [
+        {
+            "files": "*.yml",
+            "options": {
+                "tabWidth": 2
+            }
+        }
+    ]
 }

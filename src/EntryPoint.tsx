@@ -10,10 +10,26 @@ import LeafletButton from './LeafletButton';
 import './map.css';
 import ImageList from './ImageList';
 import GeoImageLayer from './GeoImageLayer';
+import ImageTable from './ImageTable';
+import sc from './sc_EntryPoint';
 // type SatelliteImage = {
 //     name: string;
 //     path: string;
 // };
+const example_data: Array<SatelliteImageData> = [
+    {
+        name: 'a.png',
+        uri: '#',
+        location: [3.5, 6.1],
+        size: 413415253,
+    },
+    {
+        name: 'b.png',
+        uri: '#',
+        location: [643.2, 13.4523],
+        size: 359231578,
+    },
+];
 const pos: LatLngExpression = [51.505, -0.09];
 const icon = L.icon({
     iconRetinaUrl: icRetina,
@@ -107,17 +123,35 @@ const EntryPoint = (): JSX.Element => {
                 {/* {userImage && (
                     <GeoImageLayer tifBuffer={imageBuffer} jsonString={roadData} />
                 )} */}
-                <LeafletButton title="Select Image" onClick={() => setFlag(true)} />
+                <LeafletButton
+                    title="Select Image"
+                    onClick={() => setFlag(true)}
+                    position="topright"
+                />
             </MapContainer>
+
+            {/* Select Image 버튼의 팝업 레이어 */}
             {flag && (
                 <PopupLayer>
-                    <ImageList title="Select/Upload Image" callback={setFlag}>
-                        <div>{'['.concat([pos].toString(), ']')}</div>
-                        <div>{filetext?.toString()}</div>
+                    <ImageList
+                        title="Select/Upload Image"
+                        callback={setFlag}
+                        ContentStyle={{ display: 'flex', flexDirection: 'column' }}
+                    >
                         <div>
+                            <ImageTable data={example_data} />
+                        </div>
+                        <sc.HorizontalLine />
+                        <div style={{ flexGrow: 1 }}></div>
+                        <sc.ImageListFooter>
                             <input type="file" id="uploadImage" onChange={imageSelect} />
                             <input type="file" id="uploadRoad" onChange={roadSelect} />
-                        </div>
+                            <div>
+                                <sc.ImgFooterButton>상세설정</sc.ImgFooterButton>
+                                <sc.ImgFooterButton>업로드</sc.ImgFooterButton>
+                            </div>
+                        </sc.ImageListFooter>
+                        {/* </div> */}
                     </ImageList>
                 </PopupLayer>
             )}

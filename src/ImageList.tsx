@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, CSSProperties } from 'react';
 import styled from 'styled-components';
 import CloseImage from '../resource/close.png';
 
@@ -6,6 +6,7 @@ type ImageListType = {
     title: string;
     callback: React.Dispatch<React.SetStateAction<boolean>>;
     children: string | JSX.Element | JSX.Element[];
+    ContentStyle: Partial<CSSProperties>;
 };
 const TitleBar = styled.div`
     display: flex;
@@ -31,7 +32,12 @@ const CloseButton = styled.img`
         background-color: lightgray;
     }
 `;
-const ImageList = ({ title, callback, children }: ImageListType): JSX.Element => {
+const ImageList = ({
+    title,
+    callback,
+    children,
+    ContentStyle,
+}: ImageListType): JSX.Element => {
     return (
         <div className="popupWindow">
             <TitleBar>
@@ -44,7 +50,7 @@ const ImageList = ({ title, callback, children }: ImageListType): JSX.Element =>
                     alt="Close"
                 />
             </TitleBar>
-            <MainContent>{children}</MainContent>
+            <MainContent style={ContentStyle}>{children}</MainContent>
         </div>
     );
 };

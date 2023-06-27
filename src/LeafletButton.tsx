@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import L, { useMap } from 'react-leaflet';
-import { Control, DomUtil } from 'leaflet';
+import { Control, DomUtil, ControlPosition } from 'leaflet';
 // import styled from 'styled-components';
 
 // const CustomButton = styled.div`
@@ -14,10 +14,11 @@ import { Control, DomUtil } from 'leaflet';
 // `;
 type LeafletButtonType = {
     title: string;
-    style?: object | null;
+    style?: Partial<CSSStyleDeclaration> | null;
     onClick: (this: HTMLElement, ev: MouseEvent) => any;
+    position?: ControlPosition;
 };
-const LeafletButton = ({ title, style, onClick }: LeafletButtonType): null => {
+const LeafletButton = ({ title, style, onClick, position }: LeafletButtonType): null => {
     const map = useMap();
     useEffect(() => {
         const button = Control.extend({
@@ -33,7 +34,7 @@ const LeafletButton = ({ title, style, onClick }: LeafletButtonType): null => {
                 return div;
             },
         });
-        const buttonControl = new button({ position: 'topright' });
+        const buttonControl = new button({ position: position });
         buttonControl.addTo(map);
     }, []);
 

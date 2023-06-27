@@ -1,0 +1,16 @@
+version: '3'
+# https://blog.adamzolo.com/dockerizing-mariadb-with-a-custom-sql-script-in-development/
+
+services:
+  mariadb:
+    container_name: mariadb
+    build:
+      context: ./DockerFiles
+      dockerfile: Mariadb_Dockerfile
+    ports:
+      - 15555:3306
+    environment:
+      - MARIADB_ROOT_PASSWORD=root
+      - MARIADB_DATABASE=roadimage
+      - MARIADB_USER=admin
+      - MARIADB_PASSWORD=roadimage
