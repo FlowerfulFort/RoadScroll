@@ -5,7 +5,8 @@ import CloseImage from '../resource/close.png';
 type ImageListType = {
     title: string;
     callback: React.Dispatch<React.SetStateAction<boolean>>;
-    children: string | JSX.Element | JSX.Element[];
+    children: React.ReactNode;
+    // children: string | JSX.Element | JSX.Element[];
     ContentStyle: Partial<CSSProperties>;
 };
 const TitleBar = styled.div`

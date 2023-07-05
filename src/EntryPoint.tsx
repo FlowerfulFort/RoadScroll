@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import L, { LatLngExpression } from 'leaflet';
 import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
 import PopupLayer from './PopupLayer';
@@ -12,6 +12,8 @@ import ImageList from './ImageList';
 import GeoImageLayer from './GeoImageLayer';
 import ImageTable from './ImageTable';
 import sc from './sc_EntryPoint';
+import DetailedInfo from './DetailedInfo';
+import MapEvents from './MapEvents';
 // type SatelliteImage = {
 //     name: string;
 //     path: string;
@@ -29,7 +31,21 @@ const example_data: Array<SatelliteImageData> = [
         location: [643.2, 13.4523],
         size: 359231578,
     },
+    {
+        name: 'b.png',
+        uri: '#',
+        location: [643.2, 13.4523],
+        size: 359231578,
+    },
+
+    {
+        name: 'c.tif',
+        uri: '#',
+        location: [19.3, 148.32],
+        size: 783479834324,
+    },
 ];
+const infoName = ['Latitude', 'Longitude', 'Width', 'Height'];
 const pos: LatLngExpression = [51.505, -0.09];
 const icon = L.icon({
     iconRetinaUrl: icRetina,
@@ -47,6 +63,7 @@ const EntryPoint = (): JSX.Element => {
      * roadData: geojson으로 저장되어 있는 도로 데이터
      * // imageList: DB에서 불러올 이미지 리스트.
      * // filetext: 파일 선택 예시 함수에서 사용함. 폐기할듯.
+     * detailedFlag: 상세설정 버튼 플래그
      ***************************/
 
     const [flag, setFlag] = useState<boolean>(false);
@@ -55,6 +72,8 @@ const EntryPoint = (): JSX.Element => {
     const [roadData, setRoadData] = useState<string | null>(null);
     const [imageList, setImageList] = useState<File[]>([]);
     const [filetext, setFileText] = useState<string | null | ArrayBuffer>(null);
+    const [detailedFlag, setDetailedFlag] = useState<boolean>(false);
+    const detailRef = useRef<HTMLDivElement>(null);
     // let imageBuffer: ArrayBuffer | null = null;
     // let roadData: string | null = null;
 
@@ -91,6 +110,17 @@ const EntryPoint = (): JSX.Element => {
         }
         // setImageList(Array.from(e.target.files || []));
     };
+    const uploadImage = () => {
+        if (detailedFlag) {
+            const inputs = detailRef.current?.querySelectorAll('tbody input');
+            const exif: ObjType = {};
+            infoName.forEach((name, index) => {
+                exif[name] = (inputs![index] as HTMLInputElement).value;
+            });
+
+            console.log(exif);
+        }
+    };
     // for debugging
     useEffect(() => {
         console.log(imageList);
@@ -109,6 +139,7 @@ const EntryPoint = (): JSX.Element => {
                     maxZoom={20}
                     subdomains={['mt1', 'mt2', 'mt3']}
                 />
+                <MapEvents />
                 <Marker position={pos} icon={icon}>
                     <Popup>
                         A pretty CSS3 popup. <br /> Easily customizable.
@@ -127,6 +158,13 @@ const EntryPoint = (): JSX.Element => {
                     title="Select Image"
                     onClick={() => setFlag(true)}
                     position="topright"
+                    style={{
+                        border: '1px solid white',
+                        borderRadius: '25px',
+                        boxShadow: '5px 5px 5px',
+                        marginRight: '15px',
+                        marginTop: '15px',
+                    }}
                 />
             </MapContainer>
 
@@ -138,17 +176,32 @@ const EntryPoint = (): JSX.Element => {
                         callback={setFlag}
                         ContentStyle={{ display: 'flex', flexDirection: 'column' }}
                     >
-                        <div>
+                        <div
+                            style={{
+                                flex: '1 1 0',
+                                overflowY: 'auto',
+                                marginBottom: 'auto',
+                            }}
+                        >
                             <ImageTable data={example_data} />
                         </div>
                         <sc.HorizontalLine />
-                        <div style={{ flexGrow: 1 }}></div>
+
+                        {detailedFlag && (
+                            <DetailedInfo items={infoName} ref={detailRef} />
+                        )}
                         <sc.ImageListFooter>
                             <input type="file" id="uploadImage" onChange={imageSelect} />
                             <input type="file" id="uploadRoad" onChange={roadSelect} />
-                            <div>
-                                <sc.ImgFooterButton>상세설정</sc.ImgFooterButton>
-                                <sc.ImgFooterButton>업로드</sc.ImgFooterButton>
+                            <div style={{ marginLeft: 'auto' }}>
+                                <sc.ImgFooterButton
+                                    onClick={() => setDetailedFlag(!detailedFlag)}
+                                >
+                                    상세설정(TIF가 아닌 경우)
+                                </sc.ImgFooterButton>
+                                <sc.ImgFooterButton onClick={() => uploadImage()}>
+                                    업로드
+                                </sc.ImgFooterButton>
                             </div>
                         </sc.ImageListFooter>
                         {/* </div> */}

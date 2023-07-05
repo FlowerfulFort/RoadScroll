@@ -10,7 +10,7 @@ import styled from 'styled-components';
 type ImageTableType = {
     data: Array<SatelliteImageData>;
 };
-const CustomTable = styled.table`
+export const CustomTable = styled.table`
     border-collapse: collapse;
     font-size: 16px;
     text-align: left;

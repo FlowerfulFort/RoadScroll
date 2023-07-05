@@ -10,3 +10,12 @@ type SatelliteImageData = {
     location: MyGeoLocation; // geolocation
     size: number; // file size
 };
+type GeoEXIF = {
+    location: MyGeoLocation;
+    width: number;
+    height: number;
+};
+type ObjType = {
+    // string literal 문제를 해결해기 위한 object type.
+    [k: string]: any;
+};
