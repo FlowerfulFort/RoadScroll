@@ -5,12 +5,49 @@ services:
   mariadb:
     container_name: mariadb
     build:
-      context: ./DockerFiles
-      dockerfile: Mariadb_Dockerfile
-    ports:
-      - 15555:3306
+      context: ./mariadb
+      dockerfile: Dockerfile
     environment:
       - MARIADB_ROOT_PASSWORD=root
       - MARIADB_DATABASE=roadimage
       - MARIADB_USER=admin
       - MARIADB_PASSWORD=roadimage
+    volumes:
+      - F:\roadscroll\mariadb:/var/lib/mysql
+    restart: 'unless-stopped'
+
+  nginx:
+    container_name: nginx-road
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - C:\Users\cquser\docker\letsencrypt:/etc/letsencrypt
+    depends_on:
+      - mariadb
+      - node
+      - mariadb-python
+    restart: 'unless-stopped'
+
+  mariadb-python:
+    container_name: mariadb-python
+    build:
+      context: ./mariadb-python
+      dockerfile: Dockerfile
+    volumes:
+      - F:\roadscroll\images:/opt/images
+    depends_on:
+      - mariadb
+    restart: 'unless-stopped'
+
+  node:
+    container_name: console
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - mariadb-python
+    restart: 'unless-stopped'

@@ -2,5 +2,5 @@
 -- use roadimage;
 
 -- create user 'roadimage'@'%' identified by 'roadimage';
-grant all privileges on roadimage.* to 'admin'@'%' identified by 'admin';
+grant all privileges on roadimage.* to 'admin'@'%' identified by 'roadimage';
 flush privileges;

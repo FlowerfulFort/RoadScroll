@@ -1,7 +1,0 @@
-FROM mariadb
-# ENV MARIADB_ROOT_PASSWORD root
-
-# WORKDIR /root
-ADD Initialize.sql /docker-entrypoint-initdb.d/ddl.sql
-
-# RUN mariadb -uroot -p${MARIADB_ROOT_PASSWORD} < /root/init.sql
