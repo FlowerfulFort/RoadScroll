@@ -79,6 +79,7 @@ const EntryPoint = (): JSX.Element => {
 
     /* 데모용 이미지 선택 함수 */
     const imageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        console.log('selected');
         const fileReader = new FileReader();
         if (e.target.files == null) return;
         fileReader.onload = () => {

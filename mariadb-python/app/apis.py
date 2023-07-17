@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, UploadFile, File
+from fastapi.staticfiles import StaticFiles
 from typing import List
 from . import schemas, crud
 from .model import Base
@@ -7,6 +8,8 @@ from sqlalchemy.orm import Session
 # import crud
 import hashlib
 import rasterio
+from rasterio.warp import calculate_default_transform
+from rasterio.transform import array_bounds
 
 Base.metadata.create_all(bind=engine)
 IMAGEPATH = '/opt/images'
@@ -18,10 +21,12 @@ def get_db():
         yield db
     finally:
         db.close()
+app.mount('/image', StaticFiles(directory='/opt/images'), name='image')
+app.mount('/geojson', StaticFiles(directory='/opt/geojsons'), name='geojson')
 
 @app.get('/imagelist', response_model=List[schemas.SateImageInfo])
 def getImageList(db: Session = Depends(get_db)):
-    db_list = crud.get_image_list()
+    db_list = crud.get_image_list(db)
     if db_list == None:
         return []
     result = []
@@ -41,6 +46,7 @@ def getImageList(db: Session = Depends(get_db)):
         ))
     return result
 
+DST_CRS = 'EPSG:4326'
 # tif only
 @app.post('/uploadimage', response_model=schemas.SateImageInfo)
 async def upload_image(ext: str, file: UploadFile, db: Session = Depends(get_db)):
@@ -55,15 +61,21 @@ async def upload_image(ext: str, file: UploadFile, db: Session = Depends(get_db)
         bounds = data.bounds
         width = data.width
         height = data.height
+        print('현재 좌표계: ', data.crs)
+        print('width, height = ', width, height)
+        print('bounds = ', data.bounds)
+        transform, width, height = calculate_default_transform(data.crs, DST_CRS, width, height, *bounds)
+        bounds = array_bounds(height=height, width=width, transform=transform)
+        # bounds = (transformed_min_x, transformed_min_y, transformed_max_x, transformed_max_y)
 
     image_bounds = schemas.ImageBounds(
-        left=bounds.left,
-        right=bounds.right,
-        top=bounds.top,
-        bottom=bounds.bottom
+        left=bounds[0],
+        right=bounds[2],
+        top=bounds[3],
+        bottom=bounds[1]
     )
-    x = (bounds.left + bounds.right) / 2
-    y = (bounds.top + bounds.bottom) / 2
+    x = (image_bounds.left + image_bounds.right) / 2
+    y = (image_bounds.top + image_bounds.bottom) / 2
     info = schemas.SateImageInfo(
         title=file.filename,
         size=len(content),
@@ -74,3 +86,17 @@ async def upload_image(ext: str, file: UploadFile, db: Session = Depends(get_db)
     )
     crud.add_image(db, info)
     return info
+
+import random
+@app.get('/addimageinfo', response_model=schemas.SateImageInfo)
+def add_image_info(title:str, db: Session=Depends(get_db)):
+    size = random.randint(0, 1234)
+    sha256 = hashlib.sha256(title.encode('utf-8')).hexdigest()
+    return crud.add_image(db, schemas.SateImageInfo(
+        title=title,
+        size=size,
+        sha256=sha256,
+        location=[random.random()*90, random.random()*180],
+        resolution=[1280, 1280],
+        bounds=schemas.create_bounds([1,1,1,1])
+    ))

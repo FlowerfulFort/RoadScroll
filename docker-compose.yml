@@ -39,6 +39,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - F:\roadscroll\images:/opt/images
+      - F:\roadscroll\geojsons:/opt/geojsons
     depends_on:
       - mariadb
     restart: 'unless-stopped'

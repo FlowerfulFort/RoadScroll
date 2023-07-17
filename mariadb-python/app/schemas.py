@@ -14,3 +14,12 @@ class SateImageInfo(BaseModel):
     location: List[float]   # [lat, lon]
     resolution: List[int]   # [vertical, horizontal]
     bounds: ImageBounds
+
+def create_bounds(arr: List[int]) -> ImageBounds:
+    assert len(arr) == 4, 'Array size error: it must have 4 elements'
+    return ImageBounds(
+        left=arr[0],
+        right=arr[1],
+        top=arr[2],
+        bottom=arr[3]
+    )
