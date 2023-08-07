@@ -1,9 +1,22 @@
-FROM python
+FROM python:3.10.12
+
+RUN apt update
+RUN apt install -y gdal-bin
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.5.2-0-Linux-x86_64.sh
+ENV PATH "/miniconda/bin:$PATH"
+RUN chmod a+x Miniconda3-py310_23.5.2-0-Linux-x86_64.sh
+RUN ./Miniconda3-py310_23.5.2-0-Linux-x86_64.sh -b -f -p /miniconda
+
+RUN conda init
+RUN conda update -n base -c defaults conda 
+RUN conda install -c conda-forge gdal
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
 COPY . /app/server
 WORKDIR /app/server
 
-RUN pip install -r requirements.txt
 
 EXPOSE 8000
 

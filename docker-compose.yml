@@ -14,6 +14,9 @@ services:
       - MARIADB_PASSWORD=roadimage
     volumes:
       - F:\roadscroll\mariadb:/var/lib/mysql
+    ports:
+      - 3306:29988
+    # Debug용 포트. 29988로 접속하여 디버그.
     restart: 'unless-stopped'
 
   nginx:
@@ -40,6 +43,8 @@ services:
     volumes:
       - F:\roadscroll\images:/opt/images
       - F:\roadscroll\geojsons:/opt/geojsons
+      - F:\roadscroll\masks:/opt/masks
+      - F:\roadscroll\tiles:/opt/tiles
     depends_on:
       - mariadb
     restart: 'unless-stopped'

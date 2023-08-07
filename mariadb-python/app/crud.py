@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 # from .model import SateImage
 from . import schemas, model
 
@@ -19,7 +20,10 @@ def add_image(db: Session, new: schemas.SateImageInfo):
         b_top = new.bounds.top,
         b_bottom = new.bounds.bottom,
     )
-    db.add(db_image)
+    try:
+        db.add(db_image)
+    except IntegrityError as e:
+        return None
     db.commit()
     db.refresh(db_image)
 
