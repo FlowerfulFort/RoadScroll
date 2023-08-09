@@ -19,3 +19,17 @@ type ObjType = {
     // string literal 문제를 해결해기 위한 object type.
     [k: string]: any;
 };
+type ImageBounds = {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+};
+type SateImageInfo = {
+    title: string;
+    size: number;
+    sha256: string;
+    location: MyGeoLocation;
+    resolution: [number, number];
+    bounds: ImageBounds;
+};

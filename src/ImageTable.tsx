@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-
+import L, { LatLngExpression } from 'leaflet';
+import sc from './sc_ImageTable';
+const DefaultMessage = () => {
+    return <sc.DefaultMsg>There's no data here yet.</sc.DefaultMsg>;
+};
 // type SatelliteImageData = {
 //     name: string; // file name
 //     uri: string; // file uri
@@ -8,7 +12,15 @@ import styled from 'styled-components';
 //     size: number; // file size
 // };
 type ImageTableType = {
-    data: Array<SatelliteImageData>;
+    // data: Array<SatelliteImageData>;
+    data: Array<SateImageInfo>;
+    select_callback: React.Dispatch<React.SetStateAction<number | null>>;
+    mapRef: React.RefObject<L.Map>;
+    // promise_callback?: () => Promise<AxiosResponse>;
+};
+type RowInfo = {
+    d: SateImageInfo;
+    onClickListener: React.MouseEventHandler<HTMLAnchorElement>;
 };
 export const CustomTable = styled.table`
     border-collapse: collapse;
@@ -63,19 +75,43 @@ const _th = styled.th`
         color: blue;
     }
 `;
-const Data2Row = (d: SatelliteImageData): JSX.Element => {
+
+// const TableRow = (title: string): JSX.Element => {
+//     return;
+// };
+// const Data2Row = (d: SatelliteImageData): JSX.Element => {
+const Data2Row = (
+    d: SateImageInfo,
+    onClickListener: React.MouseEventHandler<HTMLAnchorElement>
+): JSX.Element => {
     return (
         <>
             <td>
-                <a href={d.uri}>{d.name}</a>
+                {/* <a href={d.uri}>{d.name}</a> */}
+                {/* <a href={`/api/image/${d.sha256}.tif`}>{d.title}</a> */}
+                <a href="#" onClick={onClickListener}>
+                    {d.title}
+                </a>
             </td>
             <td>{d.size}</td>
             <td>{`[${d.location[0]}, ${d.location[1]}]`}</td>
         </>
     );
 };
-const ImageTable = ({ data }: ImageTableType) => {
-    let k = 0;
+const ImageTable = ({ data, select_callback, mapRef }: ImageTableType) => {
+    // const [fetched, setfetched] = useState<number>(0);
+    // let body: JSX.Element = DefaultMessage();
+    // if (promise_callback != undefined) {
+    //     useEffect(() => {}, []);
+    //     promise_callback().then((response) => {
+    //         const fetched_data = response.data;
+
+    //         setfetched(fetched + 1);
+    //     }).catch(reason => {
+    //         console.log(reason);
+    //     });
+    // }
+
     return (
         <>
             <CustomTable>
@@ -87,8 +123,14 @@ const ImageTable = ({ data }: ImageTableType) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map((e) => (
-                        <tr key={k++}>{Data2Row(e)}</tr>
+                    {data.map((e, i) => (
+                        <tr key={i}>
+                            {Data2Row(e, (event) => {
+                                console.log(`call: ${i}`);
+                                select_callback(i);
+                                mapRef.current?.flyTo(e.location);
+                            })}
+                        </tr>
                     ))}
                 </tbody>
             </CustomTable>

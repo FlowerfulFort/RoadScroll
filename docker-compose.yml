@@ -15,7 +15,7 @@ services:
     volumes:
       - F:\roadscroll\mariadb:/var/lib/mysql
     ports:
-      - 3306:29988
+      - 29988:3306
     # Debug용 포트. 29988로 접속하여 디버그.
     restart: 'unless-stopped'
 

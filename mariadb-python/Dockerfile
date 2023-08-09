@@ -8,7 +8,8 @@ RUN chmod a+x Miniconda3-py310_23.5.2-0-Linux-x86_64.sh
 RUN ./Miniconda3-py310_23.5.2-0-Linux-x86_64.sh -b -f -p /miniconda
 
 RUN conda init
-RUN conda update -n base -c defaults conda 
+RUN conda update --all
+# RUN conda update -n base -c defaults conda 
 RUN conda install -c conda-forge gdal
 
 COPY requirements.txt .

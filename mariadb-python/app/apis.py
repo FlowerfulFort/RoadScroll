@@ -26,7 +26,7 @@ def get_db():
         db.close()
 app.mount('/image', StaticFiles(directory='/opt/images'), name='image')
 app.mount('/geojson', StaticFiles(directory='/opt/geojsons'), name='geojson')
-app.mount('/masks', StaticFiles(directory='/opt/masks'), name='mask')
+app.mount('/mask', StaticFiles(directory='/opt/masks'), name='mask')
 
 ## xyz tiles
 app.mount('/tiles', StaticFiles(directory='/opt/tiles'), name='tile')
@@ -42,7 +42,7 @@ def getImageList(db: Session = Depends(get_db)):
             title=i.title,
             size=i.size,
             sha256=i.sha256,
-            location=[i.loc_ver, i.loc_hor],
+            location=[i.loc_hor, i.loc_ver],
             resolution=[i.res_ver, i.res_hor],
             bounds=schemas.ImageBounds(
                 left=i.b_left,
