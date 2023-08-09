@@ -190,7 +190,7 @@ const EntryPoint = (): JSX.Element => {
                     maxZoom={20}
                     subdomains={['mt1', 'mt2', 'mt3']}
                 />
-                {targetImage && imageList[targetImage] && (
+                {targetImage != null && imageList[targetImage] && (
                     <TileLayer
                         url={get_XYZ_URL(imageList[targetImage])}
                         maxZoom={20}
