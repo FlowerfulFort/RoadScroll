@@ -133,3 +133,5 @@ resource/*test*
 
 dist/*
 !dist/index.html
+
+.vscode

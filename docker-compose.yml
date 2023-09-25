@@ -7,6 +7,7 @@ services:
     build:
       context: ./mariadb
       dockerfile: Dockerfile
+    image: flowerfulfort/roadscroll-db:latest
     environment:
       - MARIADB_ROOT_PASSWORD=root
       - MARIADB_DATABASE=roadimage
@@ -24,6 +25,7 @@ services:
     build:
       context: ./nginx
       dockerfile: Dockerfile
+    image: flowerfulfort/roadscroll-server:latest
     ports:
       - 80:80
       - 443:443
@@ -40,6 +42,7 @@ services:
     build:
       context: ./mariadb-python
       dockerfile: Dockerfile
+    image: flowerfulfort/roadscroll-api:latest
     volumes:
       - F:\roadscroll\images:/opt/images
       - F:\roadscroll\geojsons:/opt/geojsons
@@ -54,6 +57,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: flowerfulfort/roadscroll-console:latest
     depends_on:
       - mariadb-python
     restart: 'unless-stopped'
