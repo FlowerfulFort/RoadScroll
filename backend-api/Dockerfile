@@ -1,6 +1,9 @@
 FROM python:3.10.12
 
 RUN apt update
+RUN apt install -y git
+RUN git clone https://github.com/FlowerfulFort/RoadToGraduate.git
+RUN ./RoadToGraduate/src/prepare_model.sh
 RUN apt install -y gdal-bin
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.5.2-0-Linux-x86_64.sh
 ENV PATH "/miniconda/bin:$PATH"
