@@ -1,4 +1,4 @@
-FROM mariadb
+FROM mariadb:11.1.2
 # ENV MARIADB_ROOT_PASSWORD root
 
 # RUN apt-get update

@@ -9,9 +9,9 @@ RUN apt update
 RUN apt install -y curl wget gcc build-essential git
 RUN apt install -y libglib2.0-0 libsm6 libxrender1 libxext6 libgl1-mesa-dev
 
-RUN git clone https://github.com/FlowerfulFort/RoadToGraduate.git
-RUN chmod a+x RoadToGraduate/prepare_model.sh
-RUN ./RoadToGraduate/prepare_model.sh
+# RUN git clone https://github.com/FlowerfulFort/RoadToGraduate.git
+# RUN chmod a+x RoadToGraduate/prepare_model.sh
+# RUN ./RoadToGraduate/prepare_model.sh
 RUN apt install -y gdal-bin
 
 RUN wget https://repo.anaconda.com/miniconda/Miniconda3-py310_23.5.2-0-Linux-x86_64.sh
@@ -38,10 +38,15 @@ RUN pip install scipy scikit-learn scikit-image
 RUN conda install -c conda-forge gdal
 
 COPY . /app/server
+WORKDIR /app/server/app
+
+RUN git clone https://github.com/FlowerfulFort/RoadToGraduate.git
+RUN chmod a+x RoadToGraduate/prepare_model.sh
+RUN ./RoadToGraduate/prepare_model.sh
+
 WORKDIR /app/server
-
-
+RUN chmod a+x startup.sh
 EXPOSE 8000
 
-CMD ["python", "index.py"]
+CMD ["./startup.sh"]
 # CMD ["uvicorn", "index:app", "--host", "0.0.0.0", "--port=8000", "--reload", "--root-path='/api'"]
