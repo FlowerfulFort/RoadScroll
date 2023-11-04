@@ -12,6 +12,9 @@ import rasterio
 from rasterio.warp import calculate_default_transform
 from rasterio.transform import array_bounds
 import subprocess
+from .image_process import image_prediction, ImageStatus
+
+is_busy = False
 
 Base.metadata.create_all(bind=engine)
 IMAGEPATH = '/opt/images'
@@ -30,6 +33,12 @@ app.mount('/mask', StaticFiles(directory='/opt/masks'), name='mask')
 
 ## xyz tiles
 app.mount('/tiles', StaticFiles(directory='/opt/tiles'), name='tile')
+# async def test_func():
+#     global count
+#     print('async task start')
+#     await asyncio.sleep(2)
+#     print('async task ended', flush=True)
+#     count +=1
 
 @app.get('/imagelist', response_model=List[schemas.SateImageInfo])
 def getImageList(db: Session = Depends(get_db)):
@@ -98,6 +107,7 @@ async def upload_image(ext: str, file: UploadFile, db: Session = Depends(get_db)
 
 @app.post('/uploadimage_test', response_model=schemas.SateImageInfo)
 async def upload_image_test(ext: str, file: UploadFile, db: Session = Depends(get_db)):
+    global is_busy
     content = await file.read()
     sha = hashlib.sha256(content).hexdigest()
 
@@ -135,6 +145,7 @@ async def upload_image_test(ext: str, file: UploadFile, db: Session = Depends(ge
     if crud.add_image(db, info) == None:
         raise HTTPException(status_code=405, detail='Server has same image.')
 
+    crud.update_image_status(db, sha256=sha, status=ImageStatus.GENXYZ)
     results = subprocess.run(gdal_format.format(f'{IMAGEPATH}/{sha}.{ext}', f'{TILEPATH}/{sha}'),
                              shell=True,
                              stdout=subprocess.PIPE,
@@ -143,8 +154,31 @@ async def upload_image_test(ext: str, file: UploadFile, db: Session = Depends(ge
     print(results.stdout)
     # async 실행은 Popen.
 
+    crud.update_image_status(db, sha256=sha, status=ImageStatus.DETECT)
+    print(f'[APP/PREDICT]\tStart: {sha}')
+    def task_done(hash):
+        global is_busy
+        is_busy = False
+        print(f'[APP/PREDICT]\tTask done for {hash}', flush=True)
+        crud.update_image_status(db, sha256=hash, status=ImageStatus.IDLE)
+    is_busy = True
+    await image_prediction(task_done, sha=sha)   # New Evaluation task
+
     return info
 
+# import asyncio
+# def gen_arr():
+#     return [1,2,3]
+# async def test1(a):
+#     await asyncio.sleep(3)
+#     print(f'asdfasd: {a}', flush=True)
+
+# @app.get('/test_func', response_model=str)
+# async def testing_function(aa=gen_arr()):
+#     print('test start')
+#     asyncio.create_task(test1(aa))
+#     print('test end')
+#     return 'main progress end'
 
 import random
 @app.get('/addimageinfo', response_model=schemas.SateImageInfo)

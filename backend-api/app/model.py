@@ -8,6 +8,9 @@ class SateImage(Base):
     title = Column(String(length=128), unique=True, index=True)
     size = Column(BigInteger)
     sha256 = Column(String(length=64), unique=True)
+
+    status = Column(String(length=30))
+
     loc_ver = Column(DECIMAL(precision=32, scale=16))
     loc_hor = Column(DECIMAL(precision=32, scale=16))
     # loc_ver = Column(DOUBLE)

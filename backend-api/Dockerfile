@@ -40,7 +40,8 @@ RUN conda install -c conda-forge gdal
 COPY . /app/server
 WORKDIR /app/server/app
 
-RUN git clone https://github.com/FlowerfulFort/RoadToGraduate.git
+# 개발을 위한 일시적인 해제
+# RUN git clone https://github.com/FlowerfulFort/RoadToGraduate.git
 RUN chmod a+x RoadToGraduate/prepare_model.sh
 RUN ./RoadToGraduate/prepare_model.sh
 
