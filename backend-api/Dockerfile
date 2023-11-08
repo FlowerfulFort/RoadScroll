@@ -36,7 +36,7 @@ RUN pip install torch==1.13.1+cu117 \
 RUN pip install scipy scikit-learn scikit-image
 
 RUN conda install -c conda-forge gdal
-
+RUN conda install poppler
 COPY . /app/server
 WORKDIR /app/server/app
 

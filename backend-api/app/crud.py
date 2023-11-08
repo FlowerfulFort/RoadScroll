@@ -12,7 +12,7 @@ def add_image(db: Session, new: schemas.SateImageInfo):
         title = new.title,
         size = new.size,
         sha256 = new.sha256,
-        status = ImageStatus.INIT,
+        status = ImageStatus.INIT.value,
         loc_ver = new.location[0],
         loc_hor = new.location[1],
         res_ver = new.resolution[0],
