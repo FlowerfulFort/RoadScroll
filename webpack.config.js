@@ -38,6 +38,7 @@ module.exports = {
         static: {
             directory: path.resolve(__dirname, 'dist'),
         },
+        https: true,
         compress: true,
         port: 30000,
         allowedHosts: 'all',

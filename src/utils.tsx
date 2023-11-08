@@ -1,5 +1,13 @@
 import axios from 'axios';
 
+class NetworkError extends Error {
+    value: number;
+    constructor(message: string, index: number) {
+        super(message);
+        this.value = index;
+    }
+}
+
 export const API_ENDPOINT = '/api';
 type FileType = 'image' | 'geojson' | 'tiles' | 'mask';
 // type Extension = 'png' | 'jpg' | 'tif' | 'json';
@@ -48,10 +56,71 @@ export const Info2TableData = (l: [SateImageInfo]) => {
         };
     });
 };
+type ImageChunk = {
+    index: number;
+    data: Blob;
+};
+// async function upload_chunk(url: string, chunk: Blob, index: number) {
+async function upload_chunk(url: string, chunk: ImageChunk) {
+    const formData = new FormData();
+    formData.append('index', chunk.index.toString());
+    formData.append('file', chunk.data);
+    try {
+        const response = await axios.post(url, formData);
+        console.log(`${chunk.index} chunk sended: ${response.data}`);
+        return { status: 'fulfilled', value: chunk.index };
+    } catch (err) {
+        throw new NetworkError('error while sending chunk', chunk.index);
+    }
+}
+export function sliceFile(file: File, chunkSize: number): ImageChunk[] {
+    const slice_arr = [];
+    let start = 0;
+
+    while (start < file.size) {
+        const end = Math.min(file.size, start + chunkSize);
+        const slice = file.slice(start, end);
+        slice_arr.push(slice);
+        start = end;
+    }
+    return slice_arr.map((c, i): ImageChunk => {
+        return { index: i, data: c };
+    });
+}
+export function uploadChunks(
+    url: string,
+    chunks: ImageChunk[],
+    target_index: Array<number> = []
+) {
+    if (target_index.length == 0) {
+        const responses = Promise.allSettled(
+            chunks.map(async (c, i) => {
+                return await upload_chunk(url, c);
+            })
+        );
+        return responses;
+    } else {
+        const filtered = chunks.filter((ch) => target_index.includes(ch.index));
+        const responses = Promise.allSettled(
+            filtered.map(async (c, i) => {
+                return await upload_chunk(url, c);
+            })
+        );
+        return responses;
+    }
+    // const responses = Promise.allSettled(
+    //     chunks.map(async (c, i) => {
+    //         return await upload_chunk(url, c, i);
+    //     })
+    // );
+}
 
 const utils = {
     getInfoFromDB,
     return_API_URL,
     Info2TableData,
+    sliceFile,
+    uploadChunks,
 };
+
 export default utils;

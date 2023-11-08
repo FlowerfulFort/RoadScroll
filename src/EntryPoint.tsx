@@ -14,8 +14,10 @@ import ImageTable from './ImageTable';
 import sc from './sc_EntryPoint';
 import DetailedInfo from './DetailedInfo';
 import MapEvents from './MapEvents';
-import { getInfoFromDB, return_API_URL, get_XYZ_URL } from './utils';
+import utils, { getInfoFromDB, return_API_URL, get_XYZ_URL, uploadChunks } from './utils';
 import axios from 'axios';
+// import crypto from 'crypto';
+
 // type SatelliteImage = {
 //     name: string;
 //     path: string;
@@ -128,7 +130,7 @@ const EntryPoint = (): JSX.Element => {
     //     }
     //     // setImageList(Array.from(e.target.files || []));
     // };
-    const uploadImage = useCallback(() => {
+    const uploadImage_backup = useCallback(() => {
         if (detailedFlag) {
             const inputs = detailRef.current?.querySelectorAll('tbody input');
             const exif: ObjType = {};
@@ -144,7 +146,7 @@ const EntryPoint = (): JSX.Element => {
             console.log('before upload(async) request');
             axios
                 .post(`${API_UPLOAD}?ext=tif`, formData, {
-                    timeout: 50000, // 5 min
+                    timeout: 300000, // 5 min
                 })
                 .then((res) => {
                     console.log(res.data);
@@ -158,7 +160,57 @@ const EntryPoint = (): JSX.Element => {
                     }
                 });
             console.log('after upload request');
-        }
+        } else alert('Please select tif image');
+    }, [imagePointer]);
+
+    const uploadImage = useCallback(async () => {
+        if (imagePointer != null) {
+            const chunkSize = 1024 * 1024;
+            const nChunks = Math.ceil(imagePointer.size / chunkSize);
+            const sliced = utils.sliceFile(imagePointer, chunkSize);
+            utils
+                .uploadChunks('/api/upload_chunk', sliced)
+                .then(async (arr) => {
+                    let rest = sliced;
+                    let failed = arr.filter((response) => response.status === 'rejected');
+                    let count = 0;
+                    while (failed.length != 0) {
+                        console.log('Resend count: ', count++);
+                        console.log('failed while chunk sending. Retrying.');
+                        const uploaded = (await axios.get('/api/uploaded_chunks'))
+                            .data as Array<number>;
+                        rest = rest.filter((chunk) => !uploaded.includes(chunk.index));
+                        arr = await uploadChunks('/api/upload_chunk', rest);
+                        failed = arr.filter((response) => response.status === 'rejected');
+                    }
+
+                    // console.log(arr);
+                    // const failed = arr.filter((res) => res.status === 'rejected');
+                    // console.log(failed);
+                    // if (failed.length != 0) {
+                    //     console.log(`failed while chunk sended. Retrying...`);
+                    //     const uploaded = await axios.get('/api/uploaded_chunks');
+
+                    //     axios.get('/api/uploaded_chunks').then((res) => {
+                    //         // error handling here...
+
+                    //     });
+                    // } else {
+                    //     console.log('Sending chunks Success');
+                    //     axios.get('/api/merge_files', {
+                    //         params: { chunk_size: nChunks },
+                    //     });
+                    // }
+                    const merge_res = await axios.get(
+                        `/api/merge_files?chunk_size=${nChunks}`,
+                        {
+                            timeout: 300000,
+                        }
+                    );
+                    console.log('Merge completed: ', merge_res.status);
+                })
+                .catch((reason) => console.error(reason));
+        } else alert('Please select tif image');
     }, [imagePointer]);
 
     const updateImageList = useCallback(async () => {
