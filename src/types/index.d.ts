@@ -4,6 +4,12 @@ declare module 'georaster';
 declare module '*.geojson';
 
 type MyGeoLocation = [number, number];
+type ImageStatus =
+    | 'Initializing'
+    | 'Generating XYZ'
+    | 'Detecting Roads'
+    | 'Idle'
+    | 'Error';
 type SatelliteImageData = {
     name: string; // file name
     uri: string; // file uri
@@ -32,4 +38,5 @@ type SateImageInfo = {
     location: MyGeoLocation;
     resolution: [number, number];
     bounds: ImageBounds;
+    state: ImageStatus;
 };

@@ -16,48 +16,12 @@ import DetailedInfo from './DetailedInfo';
 import MapEvents from './MapEvents';
 import utils, { getInfoFromDB, return_API_URL, get_XYZ_URL, uploadChunks } from './utils';
 import axios from 'axios';
-import { checkPrime } from 'crypto';
-import { watch } from 'fs';
-// import crypto from 'crypto';
 
 // type SatelliteImage = {
 //     name: string;
 //     path: string;
 // };
-/*
-해야할 것
-Upload 버튼 구현
-    Upload 하기 전, 미리 sha256 해시를 진행하고, 미리 받아온 이미지 리스트의 해시값과 비교한다
-    만약해시가 존재한다면 동일한 이미지를 다시 업로드 하는 것이므로 alert를 띄운다
-*/
 const API_UPLOAD = '/api/uploadimage_test';
-const example_data: Array<SatelliteImageData> = [
-    {
-        name: 'a.png',
-        uri: '#',
-        location: [3.5, 6.1],
-        size: 413415253,
-    },
-    {
-        name: 'b.png',
-        uri: '#',
-        location: [643.2, 13.4523],
-        size: 359231578,
-    },
-    {
-        name: 'b.png',
-        uri: '#',
-        location: [643.2, 13.4523],
-        size: 359231578,
-    },
-
-    {
-        name: 'c.tif',
-        uri: '#',
-        location: [19.3, 148.32],
-        size: 783479834324,
-    },
-];
 const infoName = ['Latitude', 'Longitude', 'Width', 'Height'];
 const pos: LatLngExpression = [51.505, -0.09];
 const icon = L.icon({
@@ -77,6 +41,7 @@ const EntryPoint = (): JSX.Element => {
      * // imageList: DB에서 불러올 이미지 리스트.
      * // filetext: 파일 선택 예시 함수에서 사용함. 폐기할듯.
      * detailedFlag: 상세설정 버튼 플래그
+     * uploadProgress: 분할 업로드 프로그레스.
      ***************************/
 
     const [flag, setFlag] = useState<boolean>(false);
@@ -102,70 +67,7 @@ const EntryPoint = (): JSX.Element => {
         if (e.target.files != null) {
             setImagePointer(e.target.files[0]);
         }
-        // const fileReader = new FileReader();
-        // if (e.target.files == null) return;
-        // fileReader.onload = () => {
-        //     setImageBuffer(fileReader.result as ArrayBuffer);
-        //     setUserImage(e.target.files![0].name);
-        // };
-        // fileReader.readAsArrayBuffer(e.target.files[0]);
     }, []);
-    /* 데모용 도로 선택 함수 */
-    // const roadSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const fileReader = new FileReader();
-    //     if (e.target.files == null) return;
-    //     fileReader.onload = () => {
-    //         setRoadData(fileReader.result as string);
-    //         setUserImage(userImage + e.target.files![0].name);
-    //     };
-    //     fileReader.readAsText(e.target.files[0]);
-    // };
-    /* 파일 선택 예시 */
-    // const fileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    //     const fileReader = new FileReader();
-    //     fileReader.onload = () => {
-    //         console.log(fileReader.result);
-    //         setFileText(fileReader.result);
-    //     };
-
-    //     if (e.target.files != null) {
-    //         fileReader.readAsText(e.target.files[0]);
-    //     }
-    //     // setImageList(Array.from(e.target.files || []));
-    // };
-    const uploadImage_backup = useCallback(() => {
-        if (detailedFlag) {
-            const inputs = detailRef.current?.querySelectorAll('tbody input');
-            const exif: ObjType = {};
-            infoName.forEach((name, index) => {
-                exif[name] = (inputs![index] as HTMLInputElement).value;
-            });
-
-            console.log(exif);
-        }
-        if (imagePointer != null) {
-            const formData = new FormData();
-            formData.append('file', imagePointer);
-            console.log('before upload(async) request');
-            axios
-                .post(`${API_UPLOAD}?ext=tif`, formData, {
-                    timeout: 300000, // 5 min
-                })
-                .then((res) => {
-                    console.log(res.data);
-                })
-                .catch((err) => {
-                    if (axios.isCancel(err)) {
-                        alert(`Canceled: ${err.message}`);
-                    } else {
-                        console.error('Error: ', err);
-                        alert('Error, refer the console.');
-                    }
-                });
-            console.log('after upload request');
-        } else alert('Please select tif image');
-    }, [imagePointer]);
-
     const uploadImage = useCallback(async () => {
         if (imagePointer != null) {
             const is_busy = await axios.get('/api/r_u_busy');
@@ -174,11 +76,11 @@ const EntryPoint = (): JSX.Element => {
                 return;
             }
             const chunkSize = 1024 * 1024;
-            const nChunks = Math.floor(imagePointer.size / chunkSize);
+            const nChunks = Math.ceil(imagePointer.size / chunkSize);
             const sliced = utils.sliceFile(imagePointer, chunkSize);
             const watch_progress = setInterval(async () => {
                 const uploaded = await utils.check_upload_files();
-                setUploadProgress(Math.ceil(uploaded.length / nChunks));
+                setUploadProgress(Math.floor((uploaded.length / nChunks) * 100));
             }, 100);
             utils
                 .uploadChunks('/api/upload_chunk', sliced)
@@ -197,7 +99,7 @@ const EntryPoint = (): JSX.Element => {
                     clearInterval(watch_progress);
                     setUploadProgress(100);
                     const merge_res = await axios.get(
-                        `/api/merge_files_caller?chunk_size=${nChunks}`
+                        `/api/merge_files_caller?title=${imagePointer.name}&chunk_size=${nChunks}`
                     );
                     console.log('Merge request: ', merge_res.status);
                 })

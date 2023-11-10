@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Form, Response
 from fastapi.staticfiles import StaticFiles
-from typing import List
+from typing import List, Tuple
 from . import schemas, crud
 from .model import Base
 from .database import SessionLocal, engine
@@ -19,8 +19,6 @@ import shutil
 import time
 import asyncio
 import functools
-
-is_busy = False
 
 Base.metadata.create_all(bind=engine)
 IMAGEPATH = '/opt/images'
@@ -124,7 +122,7 @@ def merge_files(chunk_size: int):
     print(f'rc ended: {rc_time_end-rc_time_start} sec', flush=True)
     return Response(status_code=200)
 
-async def merge_files_async(chunk_size: int):
+async def merge_files_async(chunk_size: int) -> Tuple[str, int]:
     print('Merge Started', flush=True)
     files = return_uploaded_files_index()
     files.sort()
@@ -160,18 +158,68 @@ async def merge_files_async(chunk_size: int):
     clear_temp_files()
     rc_time_end = time.time()
     print(f'rc ended: {rc_time_end-rc_time_start} sec', flush=True)
-    return sha
+    return sha, len(merge)
 
 @app.get('/merge_files_caller', status_code=200)
-async def merge_files_async_caller(chunk_size: int):
+async def merge_files_async_caller(title: str, chunk_size: int, db = Depends(get_db)):
     print('Async Merge Started', flush=True)
     task = asyncio.create_task(merge_files_async(chunk_size))
-    def merge_callback(future: asyncio.Future[str]):
-        if future.result() != None:
+    def merge_callback(title: str, future: asyncio.Future[Tuple[str, int]]):
+        sha, length = future.result()
+        if sha != None:
+            
             # Register in DB, inference to image model
-            print(f'Not Implemented yet: {future.result()}', flush=True)
-    
-    task.add_done_callback(merge_callback)
+            print(f'Not Implemented yet: {sha}', flush=True)
+
+            with rasterio.open(f'{IMAGEPATH}/{sha}.tif') as image:
+                transform = image.transform
+                bounds = image.bounds
+                width = image.width
+                height = image.height
+                print('이미지 좌표계: ', image.crs)
+                transform, width, height = calculate_default_transform(
+                    image.crs, DST_CRS, width, height, *bounds
+                )
+                bounds = array_bounds(height=height, width=width, transform=transform)
+            image_bounds = schemas.ImageBounds(
+                left=bounds[0],
+                right=bounds[2],
+                top=bounds[3],
+                bottom=bounds[1]
+            )
+            x = (image_bounds.left + image_bounds.right) / 2
+            y = (image_bounds.top + image_bounds.bottom) / 2
+            info = schemas.SateImageInfo(
+                title=title,
+                size=length,
+                sha256=sha,
+                location=[x, y],
+                resolution=[int(width), int(height)],
+                bounds=image_bounds,
+                status=ImageStatus.INIT.value
+            )
+            if crud.add_image(db, info) == None:
+                print('this image already exists')
+                
+            crud.update_image_status(db, sha256=sha, status=ImageStatus.GENXYZ)
+            results = subprocess.run(gdal_format.format(f'{IMAGEPATH}/{sha}.tif', f'{TILEPATH}/{sha}'),
+                                     shell=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
+                                     text=True)
+            print(results.stdout)
+            print(results.stderr, flush=True)
+
+            crud.update_image_status(db, sha256=sha, status=ImageStatus.DETECT)
+            print(f'[APP/PREDICT]\tStart: {sha}')
+            def task_done(sha, future: asyncio.Future[None]):
+                print(f'[APP/PREDICT]\tTask done for {sha}', flush=True)
+                crud.update_image_status(db, sha256=sha, status=ImageStatus.IDLE)
+            # asyncio.run(image_prediction(task_done, sha))
+            # await image_prediction(task_done, sha=sha)   # New Evaluation task
+            print('end of merge callback', flush=True)
+
+    task.add_done_callback(functools.partial(merge_callback, title))
     return Response(status_code=200)
     
 @app.get('/imagelist', response_model=List[schemas.SateImageInfo])
@@ -192,7 +240,8 @@ def getImageList(db: Session = Depends(get_db)):
                 right=i.b_right,
                 top=i.b_top,
                 bottom=i.b_bottom
-            )
+            ),
+            status=i.status
         ))
     return result
 
@@ -241,7 +290,6 @@ async def upload_image(ext: str, file: UploadFile, db: Session = Depends(get_db)
 
 @app.post('/uploadimage_test', response_model=schemas.SateImageInfo)
 async def upload_image_test(ext: str, file: UploadFile, db: Session = Depends(get_db)):
-    global is_busy
     print('file reading...', flush=True)
     content = await file.read()
     print('file read ended', flush=True)
@@ -294,11 +342,8 @@ async def upload_image_test(ext: str, file: UploadFile, db: Session = Depends(ge
     crud.update_image_status(db, sha256=sha, status=ImageStatus.DETECT)
     print(f'[APP/PREDICT]\tStart: {sha}')
     def task_done(sha, future: asyncio.Future[None]):
-        global is_busy
-        is_busy = False
         print(f'[APP/PREDICT]\tTask done for {sha}', flush=True)
         crud.update_image_status(db, sha256=sha, status=ImageStatus.IDLE)
-    is_busy = True
     await image_prediction(task_done, sha=sha)   # New Evaluation task
 
     return info
