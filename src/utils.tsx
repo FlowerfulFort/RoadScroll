@@ -115,12 +115,16 @@ export function uploadChunks(
     // );
 }
 
+export async function check_upload_files(): Promise<Array<number>> {
+    return (await axios.get(`${API_ENDPOINT}/uploaded_chunks`)).data;
+}
 const utils = {
     getInfoFromDB,
     return_API_URL,
     Info2TableData,
     sliceFile,
     uploadChunks,
+    check_upload_files,
 };
 
 export default utils;

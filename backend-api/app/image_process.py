@@ -12,8 +12,8 @@ class ImageStatus(Enum):    # string only
 
 async def image_prediction(callback, sha):
     task = asyncio.create_task(call_prediction(sha))
-    task.add_done_callback(functools.partial(callback, hash=sha))
+    task.add_done_callback(functools.partial(callback, sha))
 
-async def call_prediction(sha):
+async def call_prediction(sha, future: asyncio.Future[None]):
     print(sha, flush=True)
     return True

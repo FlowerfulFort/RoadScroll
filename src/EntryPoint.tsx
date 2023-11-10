@@ -16,6 +16,8 @@ import DetailedInfo from './DetailedInfo';
 import MapEvents from './MapEvents';
 import utils, { getInfoFromDB, return_API_URL, get_XYZ_URL, uploadChunks } from './utils';
 import axios from 'axios';
+import { checkPrime } from 'crypto';
+import { watch } from 'fs';
 // import crypto from 'crypto';
 
 // type SatelliteImage = {
@@ -86,6 +88,7 @@ const EntryPoint = (): JSX.Element => {
     const [detailedFlag, setDetailedFlag] = useState<boolean>(false);
 
     const [targetImage, setTargetImage] = useState<number | null>(null);
+    const [uploadProgress, setUploadProgress] = useState<number>(0);
 
     const detailRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map>(null);
@@ -165,9 +168,18 @@ const EntryPoint = (): JSX.Element => {
 
     const uploadImage = useCallback(async () => {
         if (imagePointer != null) {
+            const is_busy = await axios.get('/api/r_u_busy');
+            if (is_busy.data == true) {
+                alert('the server is busy... try it later.');
+                return;
+            }
             const chunkSize = 1024 * 1024;
-            const nChunks = Math.ceil(imagePointer.size / chunkSize);
+            const nChunks = Math.floor(imagePointer.size / chunkSize);
             const sliced = utils.sliceFile(imagePointer, chunkSize);
+            const watch_progress = setInterval(async () => {
+                const uploaded = await utils.check_upload_files();
+                setUploadProgress(Math.ceil(uploaded.length / nChunks));
+            }, 100);
             utils
                 .uploadChunks('/api/upload_chunk', sliced)
                 .then(async (arr) => {
@@ -177,37 +189,17 @@ const EntryPoint = (): JSX.Element => {
                     while (failed.length != 0) {
                         console.log('Resend count: ', count++);
                         console.log('failed while chunk sending. Retrying.');
-                        const uploaded = (await axios.get('/api/uploaded_chunks'))
-                            .data as Array<number>;
+                        const uploaded = await utils.check_upload_files();
                         rest = rest.filter((chunk) => !uploaded.includes(chunk.index));
                         arr = await uploadChunks('/api/upload_chunk', rest);
                         failed = arr.filter((response) => response.status === 'rejected');
                     }
-
-                    // console.log(arr);
-                    // const failed = arr.filter((res) => res.status === 'rejected');
-                    // console.log(failed);
-                    // if (failed.length != 0) {
-                    //     console.log(`failed while chunk sended. Retrying...`);
-                    //     const uploaded = await axios.get('/api/uploaded_chunks');
-
-                    //     axios.get('/api/uploaded_chunks').then((res) => {
-                    //         // error handling here...
-
-                    //     });
-                    // } else {
-                    //     console.log('Sending chunks Success');
-                    //     axios.get('/api/merge_files', {
-                    //         params: { chunk_size: nChunks },
-                    //     });
-                    // }
+                    clearInterval(watch_progress);
+                    setUploadProgress(100);
                     const merge_res = await axios.get(
-                        `/api/merge_files?chunk_size=${nChunks}`,
-                        {
-                            timeout: 300000,
-                        }
+                        `/api/merge_files_caller?chunk_size=${nChunks}`
                     );
-                    console.log('Merge completed: ', merge_res.status);
+                    console.log('Merge request: ', merge_res.status);
                 })
                 .catch((reason) => console.error(reason));
         } else alert('Please select tif image');
@@ -250,20 +242,11 @@ const EntryPoint = (): JSX.Element => {
                     />
                 )}
                 <MapEvents />
-                <Marker position={pos} icon={icon}>
+                {/* <Marker position={pos} icon={icon}>
                     <Popup>
                         A pretty CSS3 popup. <br /> Easily customizable.
                     </Popup>
-                </Marker>
-                {/* {imageBuffer != null && (
-                    <GeoImageLayer tifBuffer={imageBuffer} jsonString={null} />
-                )}
-                {roadData != null && (
-                    <GeoImageLayer tifBuffer={null} jsonString={roadData} />
-                )} */}
-                {/* {userImage && (
-                    <GeoImageLayer tifBuffer={imageBuffer} jsonString={roadData} />
-                )} */}
+                </Marker> */}
                 <LeafletButton
                     title="Select Image"
                     onClick={() => setFlag(true)}
@@ -307,7 +290,12 @@ const EntryPoint = (): JSX.Element => {
                         )}
                         <sc.ImageListFooter>
                             <input type="file" onChange={onImageSelect} accept=".tif" />
-                            <input type="file" />
+                            {uploadProgress > 0 && (
+                                <div style={{ backgroundColor: 'skyblue' }}>
+                                    {uploadProgress}%
+                                </div>
+                                // upload progress bar.
+                            )}
                             <div style={{ marginLeft: 'auto' }}>
                                 {/* <sc.ImgFooterButton
                                     onClick={() => setDetailedFlag(!detailedFlag)}

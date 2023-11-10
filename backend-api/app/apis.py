@@ -15,9 +15,11 @@ import subprocess
 from .image_process import image_prediction, ImageStatus
 import os
 from .logging import LogPrefix, logging
-from . import utils
 import shutil
 import time
+import asyncio
+import functools
+
 is_busy = False
 
 Base.metadata.create_all(bind=engine)
@@ -52,6 +54,11 @@ app.mount('/tiles', StaticFiles(directory='/opt/tiles'), name='tile')
 def return_uploaded_files_index():
     return [int(i) for i in os.listdir(TEMPPATH)]
 
+# check whether the server is recieving or merging files...
+@app.get('/r_u_busy', response_model=bool)
+def am_i_busy():
+    return len(os.listdir(TEMPPATH)) != 0
+
 @app.post('/upload_chunk', status_code=201)
 async def upload_chunk(index: int = Form(...), file: UploadFile = Form(...)):
     try:
@@ -65,6 +72,18 @@ async def upload_chunk(index: int = Form(...), file: UploadFile = Form(...)):
         logging(LogPrefix.ERROR, f'Upload chunk error index: {index}')
         raise HTTPException(status_code=406, detail=f'Upload chunk failed: {index}')
     return Response(status_code=201)
+
+# def file_write_callback(index: int, future: asyncio.Future[bytes]):
+#     content = future.result()
+#     with open(f'{TEMPPATH}/{index}', 'wb') as f:
+#         f.write(content)
+
+# @app.post('/upload_chunk_test', status_code=201)
+# def upload_chunk_test(index: int = Form(...), file: UploadFile = Form(...)):
+#     task = asyncio.create_task(file.read())
+#     task.add_done_callback(functools.partial(file_write_callback, index))
+#     loop = asyncio.get_event_loop()
+#     loop.run_until_complete(task)
 
 @app.get('/merge_files', status_code=200)
 def merge_files(chunk_size: int):
@@ -105,6 +124,56 @@ def merge_files(chunk_size: int):
     print(f'rc ended: {rc_time_end-rc_time_start} sec', flush=True)
     return Response(status_code=200)
 
+async def merge_files_async(chunk_size: int):
+    print('Merge Started', flush=True)
+    files = return_uploaded_files_index()
+    files.sort()
+    n_files = len(files)
+    if not (n_files == chunk_size):
+        raise HTTPException(status_code=404, detail=f'Chunk size failed: {n_files}')
+    merge = bytes()
+    merge_time_start = time.time()
+    for chunk in files:
+        with open(f'{TEMPPATH}/{chunk}', 'rb') as c:
+            cb = c.read()
+            merge += cb
+    merge_time_end = time.time()
+    print(f'merge ended: {merge_time_end-merge_time_start} sec', flush=True)
+    print('sha256 hasing start.', flush=True)
+    hash_time_start = time.time()
+    sha = hashlib.sha256(merge).hexdigest()
+    hash_time_end = time.time()
+    print(f'hashing ended: {hash_time_end-hash_time_start} sec', flush=True)
+    print(f'hash: {sha}')
+    print('image write start')
+    image_time_start = time.time()
+    with open(f'{IMAGEPATH}/{sha}.tif', 'wb') as image:
+        image.write(merge)
+    image_time_end = time.time()
+    print(f'image write end: {image_time_end-image_time_start} sec', flush=True)
+
+    print('Remove chunks', flush=True)
+    rc_time_start = time.time()
+    # remove chunk files.
+    # for chunk in files:
+    #     os.remove(f'{TEMPPATH}/{chunk}')
+    clear_temp_files()
+    rc_time_end = time.time()
+    print(f'rc ended: {rc_time_end-rc_time_start} sec', flush=True)
+    return sha
+
+@app.get('/merge_files_caller', status_code=200)
+async def merge_files_async_caller(chunk_size: int):
+    print('Async Merge Started', flush=True)
+    task = asyncio.create_task(merge_files_async(chunk_size))
+    def merge_callback(future: asyncio.Future[str]):
+        if future.result() != None:
+            # Register in DB, inference to image model
+            print(f'Not Implemented yet: {future.result()}', flush=True)
+    
+    task.add_done_callback(merge_callback)
+    return Response(status_code=200)
+    
 @app.get('/imagelist', response_model=List[schemas.SateImageInfo])
 def getImageList(db: Session = Depends(get_db)):
     db_list = crud.get_image_list(db)
@@ -224,7 +293,7 @@ async def upload_image_test(ext: str, file: UploadFile, db: Session = Depends(ge
 
     crud.update_image_status(db, sha256=sha, status=ImageStatus.DETECT)
     print(f'[APP/PREDICT]\tStart: {sha}')
-    def task_done(sha):
+    def task_done(sha, future: asyncio.Future[None]):
         global is_busy
         is_busy = False
         print(f'[APP/PREDICT]\tTask done for {sha}', flush=True)
