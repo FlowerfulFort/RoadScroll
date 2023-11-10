@@ -20,10 +20,11 @@ def wait_for_mariadb(engine, max_retries=10, retry_interval=5):
     print("Failed to connect to MariaDB")
     return False
 
-wait_for_mariadb(engine=engine)
-engine.dispose()
+if __name__ == '__main__':
+    wait_for_mariadb(engine=engine)
+    engine.dispose()
 
-for p in apis.PATHS:
-    os.makedirs(p, exist_ok=True)
+    for p in apis.PATHS:
+        os.makedirs(p, exist_ok=True)
 
-uvicorn.run(apis.app, port=8000, host='0.0.0.0', root_path='/api')
+    uvicorn.run("app.apis:app", port=8000, host='0.0.0.0', root_path='/api', workers=4)
