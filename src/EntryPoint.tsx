@@ -78,12 +78,16 @@ const EntryPoint = (): JSX.Element => {
             const chunkSize = 1024 * 1024;
             const nChunks = Math.ceil(imagePointer.size / chunkSize);
             const sliced = utils.sliceFile(imagePointer, chunkSize);
-            const watch_progress = setInterval(async () => {
-                const uploaded = await utils.check_upload_files();
-                setUploadProgress(Math.floor((uploaded.length / nChunks) * 100));
-            }, 100);
+            let watch = 0;
+            const increaseWatch = () => {
+                setUploadProgress(Math.floor((++watch / nChunks) * 100));
+            };
+            // const watch_progress = setInterval(async () => {
+            //     const uploaded = await utils.check_upload_files();
+            //     setUploadProgress(Math.floor((uploaded.length / nChunks) * 100));
+            // }, 100);
             utils
-                .uploadChunks('/api/upload_chunk', sliced)
+                .uploadChunks('/api/upload_chunk', sliced, increaseWatch)
                 .then(async (arr) => {
                     let rest = sliced;
                     let failed = arr.filter((response) => response.status === 'rejected');
@@ -93,10 +97,14 @@ const EntryPoint = (): JSX.Element => {
                         console.log('failed while chunk sending. Retrying.');
                         const uploaded = await utils.check_upload_files();
                         rest = rest.filter((chunk) => !uploaded.includes(chunk.index));
-                        arr = await uploadChunks('/api/upload_chunk', rest);
+                        arr = await uploadChunks(
+                            '/api/upload_chunk',
+                            rest,
+                            increaseWatch
+                        );
                         failed = arr.filter((response) => response.status === 'rejected');
                     }
-                    clearInterval(watch_progress);
+                    // clearInterval(watch_progress);
                     setUploadProgress(100);
                     const merge_res = await axios.get(
                         `/api/merge_files_caller?title=${imagePointer.name}&chunk_size=${nChunks}`

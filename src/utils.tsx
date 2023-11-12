@@ -90,12 +90,15 @@ export function sliceFile(file: File, chunkSize: number): ImageChunk[] {
 export function uploadChunks(
     url: string,
     chunks: ImageChunk[],
+    callback: Function = () => {},
     target_index: Array<number> = []
 ) {
     if (target_index.length == 0) {
         const responses = Promise.allSettled(
             chunks.map(async (c, i) => {
-                return await upload_chunk(url, c);
+                const result = await upload_chunk(url, c);
+                callback();
+                return result;
             })
         );
         return responses;
@@ -103,7 +106,9 @@ export function uploadChunks(
         const filtered = chunks.filter((ch) => target_index.includes(ch.index));
         const responses = Promise.allSettled(
             filtered.map(async (c, i) => {
-                return await upload_chunk(url, c);
+                const result = await upload_chunk(url, c);
+                callback();
+                return result;
             })
         );
         return responses;
