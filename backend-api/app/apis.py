@@ -215,7 +215,7 @@ async def merge_files_async_caller(title: str, chunk_size: int, db = Depends(get
             def task_done(sha, future: asyncio.Future[None]):
                 print(f'[APP/PREDICT]\tTask done for {sha}', flush=True)
                 crud.update_image_status(db, sha256=sha, status=ImageStatus.IDLE)
-            asyncio.run(image_prediction(task_done, sha))
+            asyncio.get_event_loop().create_task(image_prediction(task_done, sha))
             # await image_prediction(task_done, sha=sha)   # New Evaluation task
             print('end of merge callback', flush=True)
 

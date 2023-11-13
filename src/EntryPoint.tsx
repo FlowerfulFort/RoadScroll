@@ -16,6 +16,7 @@ import DetailedInfo from './DetailedInfo';
 import MapEvents from './MapEvents';
 import utils, { getInfoFromDB, return_API_URL, get_XYZ_URL, uploadChunks } from './utils';
 import axios from 'axios';
+import WktLayer from './WktLayer';
 
 // type SatelliteImage = {
 //     name: string;
@@ -23,7 +24,7 @@ import axios from 'axios';
 // };
 const API_UPLOAD = '/api/uploadimage_test';
 const infoName = ['Latitude', 'Longitude', 'Width', 'Height'];
-const pos: LatLngExpression = [51.505, -0.09];
+const pos: LatLngExpression = [36.4768, 127.3745];
 const icon = L.icon({
     iconRetinaUrl: icRetina,
     iconUrl: icMarker,
@@ -31,6 +32,9 @@ const icon = L.icon({
     iconSize: [24, 41],
     iconAnchor: [12, 41],
 });
+// [경도, 위도] 좌표임!!!!!!!!!
+const example_wkt_ = `LINESTRING (127.3751 36.5264, 127.3751 36.5045, 127.3636 36.4905, 127.3828 36.4814)`;
+const example_wkt = `LINESTRING (127.3289 36.5053, 127.3485 36.5059, 127.3595 36.5143, 127.3751 36.5045, 127.3976 36.5154, 127.4065 36.4992, 127.4228 36.4988)`;
 // type ImageFile = ArrayBuffer | string | null;
 const EntryPoint = (): JSX.Element => {
     /********** State **********
@@ -169,6 +173,7 @@ const EntryPoint = (): JSX.Element => {
                         marginTop: '15px',
                     }}
                 />
+                <WktLayer wkt={[example_wkt, example_wkt_]} />
             </MapContainer>
 
             {/* Select Image 버튼의 팝업 레이어 */}

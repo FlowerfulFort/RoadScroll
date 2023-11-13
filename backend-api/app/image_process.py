@@ -14,6 +14,8 @@ async def image_prediction(callback, sha):
     task = asyncio.create_task(call_prediction(sha))
     task.add_done_callback(functools.partial(callback, sha))
 
-async def call_prediction(sha, future: asyncio.Future[None]):
+async def call_prediction(sha):
+    print('call prediction, sleep 5 secs for testing...', flush=True)
+    await asyncio.sleep(5)
     print(sha, flush=True)
     return True
