@@ -1,5 +1,20 @@
 import axios from 'axios';
-
+import { Geometry } from './WktLayer';
+// import { generateFeature } from './WktLayer';
+const Wkt = require('wicket');
+type GeoJSONEdge = {
+    type: 'Feature';
+    properties: {
+        _cost: number;
+        _id: number;
+    };
+    geometry: Geometry;
+};
+type GeoJSONNetwork = {
+    type: 'FeatureCollection';
+    features: GeoJSONEdge[];
+};
+type Pos = [number, number];
 class NetworkError extends Error {
     value: number;
     constructor(message: string, index: number) {
@@ -120,6 +135,70 @@ export function uploadChunks(
     // );
 }
 
+// function generateFeatures(geometry: Geometry, readCallback, ): GeoJSONEdge[] {
+//     const len = geometry.coordinates.length;
+//     let result: GeoJSONEdge[] = [];
+//     // let result: GeoJSONEdge = {
+//     //     type: "Feature",
+
+//     // }
+//     for (let i=0; i<len-1; i++) {
+//         const data: GeoJSONEdge = {
+//             type: "Feature",
+//             properties: {
+//                 _id:
+//             },
+//             geometry: {
+//                 type: "LineString",
+//                 coordinates: [ geometry.coordinates[i], geometry.coordinates[i+1] ]
+//             }
+//         }
+//         result.push(data);
+//     }
+// }
+function featureMaker(id: number, cost: number, geometry: Geometry): GeoJSONEdge {
+    return {
+        type: 'Feature',
+        properties: {
+            _id: id,
+            _cost: cost,
+        },
+        geometry: geometry,
+    };
+}
+function calcDistance(x: Pos, y: Pos): number {
+    return Math.sqrt(
+        Math.pow(Math.abs(x[0] - y[0]), 2) + Math.pow(Math.abs(x[1] - y[1]), 2)
+    );
+}
+export function wkt2Network(wkt: string[]): GeoJSONNetwork {
+    const geojson: GeoJSONNetwork = {
+        type: 'FeatureCollection',
+        features: new Array<GeoJSONEdge>(),
+    };
+    let id = 1;
+
+    wkt.forEach((w, i) => {
+        const wktObj = new Wkt.Wkt();
+        wktObj.read(w);
+        const old_geometry: Geometry = wktObj.toJson();
+        for (let i = 0; i < old_geometry.coordinates.length - 1; i++) {
+            const from: Pos = old_geometry.coordinates[i];
+            const to: Pos = old_geometry.coordinates[i + 1];
+            const cost = calcDistance(from, to);
+            const geometry: Geometry = {
+                type: 'LineString',
+                coordinates: [from, to],
+            };
+            geojson.features.push(featureMaker(id++, cost, geometry));
+        }
+        // const newFeature = generateFeatures(wktObj.toJson());
+        // geojson.features.push(newFeature);
+        // geojson.features.push(wktObj.toJson());
+    });
+    return geojson;
+}
+
 export async function check_upload_files(): Promise<Array<number>> {
     return (await axios.get(`${API_ENDPOINT}/uploaded_chunks`)).data;
 }
@@ -130,6 +209,7 @@ const utils = {
     sliceFile,
     uploadChunks,
     check_upload_files,
+    wkt2Network,
 };
 
 export default utils;

@@ -17,7 +17,7 @@ import MapEvents from './MapEvents';
 import utils, { getInfoFromDB, return_API_URL, get_XYZ_URL, uploadChunks } from './utils';
 import axios from 'axios';
 import WktLayer from './WktLayer';
-
+const { Graph, CoordinateLookup, buildGeoJsonPath, buildEdgeIdList } = require('geojson-dijkstra');
 // type SatelliteImage = {
 //     name: string;
 //     path: string;

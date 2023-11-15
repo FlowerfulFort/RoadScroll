@@ -1358,6 +1358,18 @@
   resolved "https://registry.yarnpkg.com/@react-leaflet/core/-/core-2.1.0.tgz#383acd31259d7c9ae8fb1b02d5e18fe613c2a13d"
   integrity sha512-Qk7Pfu8BSarKGqILj4x7bCSZ1pjuAPZ+qmRwH5S7mDS91VSbVVsJSrW4qA+GPrro8t69gFYVMWb1Zc4yFmPiVg==
 
+"@turf/clone@6.0.2":
+  version "6.0.2"
+  resolved "https://registry.yarnpkg.com/@turf/clone/-/clone-6.0.2.tgz#7563cebbb3e2e19f361599bb244467e0dcc205c9"
+  integrity sha512-UVpYPnW3wRj3bPncR6Z2PRbowBk+nEdVWgGewPxrKKLfvswtVtG9n/OIyvbU3E3ZOadBVxTH2uAMEMOz4800FA==
+  dependencies:
+    "@turf/helpers" "6.x"
+
+"@turf/helpers@6.x":
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/@turf/helpers/-/helpers-6.5.0.tgz#f79af094bd6b8ce7ed2bd3e089a8493ee6cae82e"
+  integrity sha512-VbI1dV5bLFzohYYdgqwikdMVpe7pJ9X3E+dlr425wa2/sMJqYDhTO++ec38/pcPvPE6oD9WEEeU3Xu3gza+VPw==
+
 "@types/body-parser@*":
   version "1.19.2"
   resolved "https://registry.yarnpkg.com/@types/body-parser/-/body-parser-1.19.2.tgz#aea2059e28b7658639081347ac4fab3de166e6f0"
@@ -2616,6 +2628,22 @@ geocanvas@^0.3.1:
     to-canvas "^0.1.0"
     xdim "^1.5.2"
 
+geojson-dijkstra@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/geojson-dijkstra/-/geojson-dijkstra-1.0.4.tgz#2931f71e0f49ff3b72184d0605ebdd9f17724679"
+  integrity sha512-3wuGdcA3SL/jAo1E1FNY/9xkeUkn1cuFOkDwvGyM9BSD85LyDIfpZw7XcC0EREcXWEJSm5wOiREqfJ6LoYSpow==
+  dependencies:
+    "@turf/clone" "6.0.2"
+    geokdbush "1.1.0"
+    kdbush "1.0.1"
+
+geokdbush@1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/geokdbush/-/geokdbush-1.1.0.tgz#aa5e8e7953a6594b40a85fbdb61059af0f51468f"
+  integrity sha512-pyyrGCMXZwWJaGt1YZIgGQg5ol3JjvEKESTon10HxdfWXlaqh5An8fNJkwOYUE+VkQfCdvYQKPVezTQU9AqWAA==
+  dependencies:
+    tinyqueue "^1.2.2"
+
 geomask@^0.3.5:
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/geomask/-/geomask-0.3.5.tgz#5a77bec94e151452cd9b060f799450e54b8815f7"
@@ -3093,6 +3121,11 @@ json5@^2.2.2:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/json5/-/json5-2.2.3.tgz#78cd6f1a19bdc12b73db5ad0c61efd66c1e29283"
   integrity sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==
+
+kdbush@1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/kdbush/-/kdbush-1.0.1.tgz#3cbd03e9dead9c0f6f66ccdb96450e5cecc640e0"
+  integrity sha512-Y75c18KdvLKRmqHc0u2WUYud1vEj54i+8SNBxsowr6LJJsnNUJ8KK8cH7uHDpC5U66NNlieEzVxeWipZaYfN0w==
 
 kind-of@^6.0.2:
   version "6.0.3"
@@ -4280,6 +4313,11 @@ thunky@^1.0.2:
   integrity sha512-pJ70wq5EAqTAEl9IkGzA+fN0836rycEuz2Cn6yeZ6FRzlVS5IDOkFHpIoEsksPRQV34GDqXm65+OlnZqUSyK2g==
   dependencies:
     esm "^3.2.25"
+
+tinyqueue@^1.2.2:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/tinyqueue/-/tinyqueue-1.2.3.tgz#b6a61de23060584da29f82362e45df1ec7353f3d"
+  integrity sha512-Qz9RgWuO9l8lT+Y9xvbzhPT2efIUIFd69N7eF7tJ9lnQl0iLj1M7peK7IoUGZL9DJHw9XftqLreccfxcQgYLxA==
 
 to-canvas@^0.1.0:
   version "0.1.0"
