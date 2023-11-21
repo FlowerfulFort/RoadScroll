@@ -1,7 +1,7 @@
 FROM nvidia/cuda:12.1.0-runtime-ubuntu20.04
 
 ENV TZ=Asia/Seoul
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib:/usr/lib/mariadb
+ENV LD_LIBRARY_PATH=/miniconda/lib:$LD_LIBRARY_PATH:/usr/lib:/usr/lib/mariadb
 # Set Evaluation Worker
 # ENV EVAL_WORKER=2
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -37,6 +37,8 @@ RUN pip install scipy scikit-learn scikit-image
 
 RUN conda install -c conda-forge gdal
 RUN conda install poppler
+RUN conda install libgdal
+RUN pip install numba shapely pyproj
 COPY . /app/server
 WORKDIR /app/server/app
 

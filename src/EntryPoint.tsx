@@ -17,7 +17,13 @@ import MapEvents from './MapEvents';
 import utils, { getInfoFromDB, return_API_URL, get_XYZ_URL, uploadChunks } from './utils';
 import axios from 'axios';
 import WktLayer from './WktLayer';
-const { Graph, CoordinateLookup, buildGeoJsonPath, buildEdgeIdList } = require('geojson-dijkstra');
+
+const {
+    Graph,
+    CoordinateLookup,
+    buildGeoJsonPath,
+    buildEdgeIdList,
+} = require('geojson-dijkstra');
 // type SatelliteImage = {
 //     name: string;
 //     path: string;
@@ -33,8 +39,13 @@ const icon = L.icon({
     iconAnchor: [12, 41],
 });
 // [경도, 위도] 좌표임!!!!!!!!!
+const exp = utils.exampleWkt.split('\n');
+// const exp = [
+//     `LINESTRING (127.43152917872214 36.55036504359105, 127.43155993301998 36.55019210165481, 127.43161529075611 36.55008339509682, 127.43163374333481 36.54985609907241, 127.43165219591354 36.54983633416913, 127.43165219591354 36.5496683322872, 127.4316829502114 36.54953986001345)`,
+//     `LINESTRING (127.43175060966665 36.55050833804506, 127.43199664404939 36.55035516120512)`,
+// ];
 const example_wkt_ = `LINESTRING (127.3751 36.5264, 127.3751 36.5045, 127.3636 36.4905, 127.3828 36.4814)`;
-const example_wkt = `LINESTRING (127.3289 36.5053, 127.3485 36.5059, 127.3595 36.5143, 127.3751 36.5045, 127.3976 36.5154, 127.4065 36.4992, 127.4228 36.4988)`;
+const example_wkt = `LINESTRING (127.3289 36.5053, 127.3485 36.5059, 127.3595 36.5143, 127.3976 36.5154, 127.4065 36.4992, 127.4228 36.4988)`;
 // type ImageFile = ArrayBuffer | string | null;
 const EntryPoint = (): JSX.Element => {
     /********** State **********
@@ -133,6 +144,7 @@ const EntryPoint = (): JSX.Element => {
     useEffect(() => {
         console.log('targetImage changed: ', targetImage);
     }, [targetImage]);
+    console.log(exp);
     return (
         <>
             <MapContainer
@@ -173,7 +185,7 @@ const EntryPoint = (): JSX.Element => {
                         marginTop: '15px',
                     }}
                 />
-                <WktLayer wkt={[example_wkt, example_wkt_]} />
+                <WktLayer wkt={exp} />
             </MapContainer>
 
             {/* Select Image 버튼의 팝업 레이어 */}

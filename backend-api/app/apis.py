@@ -12,7 +12,7 @@ import rasterio
 from rasterio.warp import calculate_default_transform
 from rasterio.transform import array_bounds
 import subprocess
-from .image_process import image_prediction, ImageStatus
+from .image_process import image_prediction, ImageStatus, get_path
 import os
 from .logging import LogPrefix, logging
 import shutil
@@ -20,6 +20,7 @@ import time
 import asyncio
 import functools
 
+os.environ['PROJ_LIB'] = '/miniconda/share/proj'
 Base.metadata.create_all(bind=engine)
 IMAGEPATH = '/opt/images'
 TILEPATH = '/opt/tiles'
@@ -47,6 +48,7 @@ app.mount('/tiles', StaticFiles(directory='/opt/tiles'), name='tile')
 #     await asyncio.sleep(2)
 #     print('async task ended', flush=True)
 #     count +=1
+
 
 @app.get('/uploaded_chunks', response_model=List[int])
 def return_uploaded_files_index():
@@ -107,7 +109,7 @@ def merge_files(chunk_size: int):
     print(f'hash: {sha}')
     print('image write start')
     image_time_start = time.time()
-    with open(f'{IMAGEPATH}/{sha}.tif', 'wb') as image:
+    with open(get_path(sha), 'wb') as image:
         image.write(merge)
     image_time_end = time.time()
     print(f'image write end: {image_time_end-image_time_start} sec', flush=True)
@@ -145,7 +147,8 @@ async def merge_files_async(chunk_size: int) -> Tuple[str, int]:
     print(f'hash: {sha}')
     print('image write start')
     image_time_start = time.time()
-    with open(f'{IMAGEPATH}/{sha}.tif', 'wb') as image:
+    os.makedirs(os.path.dirname(get_path(sha)), exist_ok=True)
+    with open(get_path(sha), 'wb') as image:
         image.write(merge)
     image_time_end = time.time()
     print(f'image write end: {image_time_end-image_time_start} sec', flush=True)
@@ -171,7 +174,7 @@ async def merge_files_async_caller(title: str, chunk_size: int, db = Depends(get
             # Register in DB, inference to image model
             print(f'Not Implemented yet: {sha}', flush=True)
 
-            with rasterio.open(f'{IMAGEPATH}/{sha}.tif') as image:
+            with rasterio.open(get_path(sha)) as image:
                 transform = image.transform
                 bounds = image.bounds
                 width = image.width
@@ -202,7 +205,7 @@ async def merge_files_async_caller(title: str, chunk_size: int, db = Depends(get
                 print('this image already exists')
                 
             crud.update_image_status(db, sha256=sha, status=ImageStatus.GENXYZ)
-            results = subprocess.run(gdal_format.format(f'{IMAGEPATH}/{sha}.tif', f'{TILEPATH}/{sha}'),
+            results = subprocess.run(gdal_format.format(get_path(sha), f'{TILEPATH}/{sha}'),
                                      shell=True,
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
