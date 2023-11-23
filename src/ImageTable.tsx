@@ -14,7 +14,7 @@ const DefaultMessage = () => {
 type ImageTableType = {
     // data: Array<SatelliteImageData>;
     data: Array<SateImageInfo>;
-    select_callback: React.Dispatch<React.SetStateAction<number | null>>;
+    select_callback: (index: number) => any;
     mapRef: React.RefObject<L.Map>;
     // promise_callback?: () => Promise<AxiosResponse>;
 };

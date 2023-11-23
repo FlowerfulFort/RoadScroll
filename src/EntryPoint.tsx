@@ -9,21 +9,15 @@ import 'leaflet/dist/leaflet.css';
 import LeafletButton from './LeafletButton';
 import './map.css';
 import ImageList from './ImageList';
-import GeoImageLayer from './GeoImageLayer';
 import ImageTable from './ImageTable';
 import sc from './sc_EntryPoint';
 import DetailedInfo from './DetailedInfo';
-import MapEvents from './MapEvents';
+import { CrossClickMapEvents } from './MapEvents';
 import utils, { getInfoFromDB, return_API_URL, get_XYZ_URL, uploadChunks } from './utils';
 import axios from 'axios';
 import WktLayer from './WktLayer';
+import PathLayer from './PathLayer';
 
-const {
-    Graph,
-    CoordinateLookup,
-    buildGeoJsonPath,
-    buildEdgeIdList,
-} = require('geojson-dijkstra');
 // type SatelliteImage = {
 //     name: string;
 //     path: string;
@@ -39,13 +33,6 @@ const icon = L.icon({
     iconAnchor: [12, 41],
 });
 // [경도, 위도] 좌표임!!!!!!!!!
-const exp = utils.exampleWkt.split('\n');
-// const exp = [
-//     `LINESTRING (127.43152917872214 36.55036504359105, 127.43155993301998 36.55019210165481, 127.43161529075611 36.55008339509682, 127.43163374333481 36.54985609907241, 127.43165219591354 36.54983633416913, 127.43165219591354 36.5496683322872, 127.4316829502114 36.54953986001345)`,
-//     `LINESTRING (127.43175060966665 36.55050833804506, 127.43199664404939 36.55035516120512)`,
-// ];
-const example_wkt_ = `LINESTRING (127.3751 36.5264, 127.3751 36.5045, 127.3636 36.4905, 127.3828 36.4814)`;
-const example_wkt = `LINESTRING (127.3289 36.5053, 127.3485 36.5059, 127.3595 36.5143, 127.3976 36.5154, 127.4065 36.4992, 127.4228 36.4988)`;
 // type ImageFile = ArrayBuffer | string | null;
 const EntryPoint = (): JSX.Element => {
     /********** State **********
@@ -60,7 +47,6 @@ const EntryPoint = (): JSX.Element => {
      ***************************/
 
     const [flag, setFlag] = useState<boolean>(false);
-    const [userImage, setUserImage] = useState<string>('');
     const [imagePointer, setImagePointer] = useState<File | null>(null);
     // const [roadData, setRoadData] = useState<string | null>(null);
     const [imageList, setImageList] = useState<Array<SateImageInfo>>([]);
@@ -68,8 +54,12 @@ const EntryPoint = (): JSX.Element => {
     const [detailedFlag, setDetailedFlag] = useState<boolean>(false);
 
     const [targetImage, setTargetImage] = useState<number | null>(null);
+    const [targetWkt, setTargetWkt] = useState<Array<string> | null>(null);
     const [uploadProgress, setUploadProgress] = useState<number>(0);
 
+    // [lng, lat]
+    const [pos1, setPos1] = useState<[number, number]>([-1, -1]);
+    const [pos2, setPos2] = useState<[number, number]>([-1, -1]);
     const detailRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<L.Map>(null);
     // let imageBuffer: ArrayBuffer | null = null;
@@ -143,8 +133,22 @@ const EntryPoint = (): JSX.Element => {
     }, [imageList]);
     useEffect(() => {
         console.log('targetImage changed: ', targetImage);
+        if (targetImage != null) {
+            utils
+                .getRoadWktList(imageList[targetImage].sha256)
+                .then((wktlist) => {
+                    setTargetWkt(wktlist);
+                })
+                .catch((reason) => {
+                    console.error(reason);
+                });
+        }
     }, [targetImage]);
-    console.log(exp);
+    const initializeImage = (n: number) => {
+        setPos1([-1, -1]);
+        setPos2([-1, -1]);
+        setTargetImage(n);
+    };
     return (
         <>
             <MapContainer
@@ -167,7 +171,7 @@ const EntryPoint = (): JSX.Element => {
                         opacity={0.5}
                     />
                 )}
-                <MapEvents />
+                <CrossClickMapEvents callbacks={[setPos1, setPos2]} />
                 {/* <Marker position={pos} icon={icon}>
                     <Popup>
                         A pretty CSS3 popup. <br /> Easily customizable.
@@ -185,7 +189,10 @@ const EntryPoint = (): JSX.Element => {
                         marginTop: '15px',
                     }}
                 />
-                <WktLayer wkt={exp} />
+                {targetWkt != null && <WktLayer wkt={targetWkt} />}
+                {targetWkt != null && pos1[0] != -1 && pos2[0] != -1 && (
+                    <PathLayer wkt={targetWkt} pos1={pos1} pos2={pos2} />
+                )}
             </MapContainer>
 
             {/* Select Image 버튼의 팝업 레이어 */}
@@ -206,7 +213,7 @@ const EntryPoint = (): JSX.Element => {
                             {/* <ImageTable data={example_data} /> */}
                             <ImageTable
                                 data={imageList}
-                                select_callback={setTargetImage}
+                                select_callback={initializeImage}
                                 mapRef={mapRef}
                             />
                         </div>
