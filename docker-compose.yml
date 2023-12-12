@@ -14,7 +14,7 @@ services:
       - MARIADB_USER=admin
       - MARIADB_PASSWORD=roadimage
     volumes:
-      - F:\roadscroll\mariadb:/var/lib/mysql
+      - rs_mariadb:/var/lib/mysql
       # - scroll_db:/var/lib/mysql
     ports:
       - 29988:3306
@@ -31,6 +31,7 @@ services:
       - 80:80
       - 443:443
     volumes:
+      # Custum for TLS Certificate.
       - C:\Users\cquser\docker\letsencrypt:/etc/letsencrypt
     depends_on:
       - mariadb
@@ -53,10 +54,8 @@ services:
             - driver: nvidia
               capabilities: [gpu]
     volumes:
-      - F:\roadscroll\images:/opt/images
-      - F:\roadscroll\geojsons:/opt/geojsons
-      - F:\roadscroll\masks:/opt/masks
-      - F:\roadscroll\tiles:/opt/tiles
+      - rs_images:/opt/images
+      - rs_tiles:/opt/tiles
       # - scroll_data:/opt
     depends_on:
       - mariadb
